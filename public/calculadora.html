@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Desperdicio — INFRATEK</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --border: #2a2a2a;
+    --green: #00ff88;
+    --yellow: #fbbf24;
+    --red: #f87171;
+    --text: #f5f5f5;
+    --muted: #888;
+    --radius: 12px;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    padding: 24px 16px;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  header .badge {
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 8px;
+  }
+  header h1 {
+    font-size: clamp(1.5rem, 5vw, 2.2rem);
+    font-weight: 900;
+    line-height: 1.1;
+  }
+  header p {
+    color: var(--muted);
+    font-size: 14px;
+    margin-top: 6px;
+  }
+
+  .container { max-width: 700px; margin: 0 auto; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card h2 { font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 16px; }
+
+  .material-row {
+    display: grid;
+    grid-template-columns: 1fr 120px 80px;
+    gap: 10px;
+    align-items: end;
+    margin-bottom: 12px;
+  }
+  @media(max-width: 500px) {
+    .material-row { grid-template-columns: 1fr; }
+  }
+
+  label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
+  select, input[type=number], input[type=text] {
+    width: 100%;
+    background: #1e1e1e;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 10px 12px;
+    font-size: 14px;
+    outline: none;
+    transition: border .15s;
+  }
+  select:focus, input:focus { border-color: var(--green); }
+  select option { background: #1e1e1e; }
+
+  .btn-add {
+    width: 100%;
+    padding: 12px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--muted);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all .15s;
+    margin-top: 4px;
+  }
+  .btn-add:hover { border-color: var(--green); color: var(--green); }
+
+  .btn-remove {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: .15s;
+  }
+  .btn-remove:hover { color: var(--red); background: rgba(248,113,113,.1); }
+
+  .btn-calc {
+    width: 100%;
+    padding: 16px;
+    background: var(--green);
+    color: #000;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: opacity .15s;
+    margin-top: 8px;
+  }
+  .btn-calc:hover { opacity: .85; }
+
+  #results { display: none; }
+  .result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .result-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .stat-box {
+    background: #1a1a1a;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+  }
+  .stat-box .val {
+    font-size: 28px;
+    font-weight: 900;
+    display: block;
+    line-height: 1;
+  }
+  .stat-box .lbl { font-size: 11px; color: var(--muted); margin-top: 4px; display: block; }
+  .stat-box.warn .val { color: var(--yellow); }
+  .stat-box.ok .val { color: var(--green); }
+  .stat-box.danger .val { color: var(--red); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 8px 12px; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 12px; border-bottom: 1px solid #1a1a1a; }
+  tr:last-child td { border-bottom: none; }
+  .chip {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .chip.alto { background: rgba(248,113,113,.15); color: var(--red); border: 1px solid rgba(248,113,113,.3); }
+  .chip.medio { background: rgba(251,191,36,.12); color: var(--yellow); border: 1px solid rgba(251,191,36,.3); }
+  .chip.bajo { background: rgba(0,255,136,.1); color: var(--green); border: 1px solid rgba(0,255,136,.2); }
+
+  .btn-export {
+    background: #1e1e1e;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: .15s;
+  }
+  .btn-export:hover { border-color: var(--green); color: var(--green); }
+
+  footer { text-align: center; color: var(--muted); font-size: 11px; margin-top: 32px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="badge">INFRATEK AI · Herramienta de Construcción</div>
+    <h1>Calculadora de Desperdicio<br>de Materiales</h1>
+    <p>Calcula el material extra que necesitas pedir para tu proyecto</p>
+  </header>
+
+  <!-- Inputs -->
+  <div class="card">
+    <h2>Materiales del Proyecto</h2>
+    <div id="rows"></div>
+    <button class="btn-add" onclick="addRow()">+ Agregar Material</button>
+  </div>
+
+  <!-- Optional price toggle -->
+  <div class="card">
+    <h2>Configuración Adicional (Opcional)</h2>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <input type="checkbox" id="usePrices" onchange="togglePrices()" style="width:16px;height:16px;cursor:pointer;">
+      <label for="usePrices" style="margin:0;color:var(--text);cursor:pointer;font-size:14px;">Incluir precios unitarios para calcular costo del desperdicio</label>
+    </div>
+  </div>
+
+  <button class="btn-calc" onclick="calculate()">⚡ Calcular Desperdicio</button>
+
+  <!-- Results -->
+  <div id="results">
+    <div class="card" style="margin-top:24px;">
+      <div class="result-header">
+        <h2 style="margin:0;">Resumen de Resultados</h2>
+        <button class="btn-export" onclick="exportCSV()">↓ Exportar CSV</button>
+      </div>
+      <div class="result-summary" id="summaryBoxes"></div>
+      <table>
+        <thead>
+          <tr>
+            <th>Material</th>
+            <th>Cantidad Base</th>
+            <th>Factor Desperdicio</th>
+            <th>Total a Pedir</th>
+            <th>Desperdicio</th>
+            <th>Riesgo</th>
+          </tr>
+        </thead>
+        <tbody id="resultBody"></tbody>
+      </table>
+      <div id="costSection" style="display:none;margin-top:16px;padding:14px;background:#1a1a1a;border-radius:10px;border:1px solid var(--border);">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Costo Total del Desperdicio</div>
+        <div id="totalCostVal" style="font-size:32px;font-weight:900;color:var(--red);"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>INFRATEK LLC · Calculadora de Desperdicio de Materiales v1.0</footer>
+</div>
+
+<script>
+const MATERIALS = [
+  { name:'Concreto',          unit:'m³',  low:5,  high:10 },
+  { name:'Acero / Rebar',     unit:'kg',  low:3,  high:5  },
+  { name:'Drywall',           unit:'m²',  low:10, high:15 },
+  { name:'Pintura',           unit:'gal', low:10, high:15 },
+  { name:'Tubería PVC',       unit:'ml',  low:5,  high:8  },
+  { name:'Cable Eléctrico',   unit:'ml',  low:3,  high:5  },
+  { name:'Cerámica / Tile',   unit:'m²',  low:10, high:15 },
+  { name:'Madera / Encofrado',unit:'m²',  low:15, high:20 },
+  { name:'Bloque / Ladrillo', unit:'und', low:5,  high:10 },
+  { name:'Impermeabilizante', unit:'m²',  low:8,  high:12 },
+]
+
+let rowCount = 0;
+let usePrices = false;
+
+function togglePrices() {
+  usePrices = document.getElementById('usePrices').checked;
+  document.querySelectorAll('.price-col').forEach(el => {
+    el.style.display = usePrices ? '' : 'none';
+  });
+}
+
+function addRow(matIndex = 0, qty = '') {
+  const id = rowCount++;
+  const div = document.createElement('div');
+  div.id = `row-${id}`;
+  div.className = 'material-row';
+  const opts = MATERIALS.map((m,i) => `<option value="${i}" ${i===matIndex?'selected':''}>${m.name}</option>`).join('');
+  div.innerHTML = `
+    <div>
+      <label>Material</label>
+      <select id="mat-${id}">${opts}</select>
+    </div>
+    <div>
+      <label>Cantidad (<span id="unit-${id}">${MATERIALS[matIndex].unit}</span>)</label>
+      <input type="number" id="qty-${id}" min="0" step="any" placeholder="0" value="${qty}"
+        oninput="" onchange="updateUnit(${id})">
+    </div>
+    <div class="price-col" style="display:${usePrices?'':'none'}">
+      <label>Precio / <span id="punit-${id}">${MATERIALS[matIndex].unit}</span></label>
+      <input type="number" id="price-${id}" min="0" step="any" placeholder="0.00">
+    </div>
+    <div style="align-self:flex-end;">
+      <button class="btn-remove" onclick="removeRow(${id})" title="Eliminar">×</button>
+    </div>
+  `;
+  div.querySelector(`#mat-${id}`).addEventListener('change', () => updateUnit(id));
+  document.getElementById('rows').appendChild(div);
+}
+
+function updateUnit(id) {
+  const idx = parseInt(document.getElementById(`mat-${id}`).value);
+  const unit = MATERIALS[idx].unit;
+  document.getElementById(`unit-${id}`).textContent = unit;
+  document.getElementById(`punit-${id}`).textContent = unit;
+}
+
+function removeRow(id) {
+  const el = document.getElementById(`row-${id}`);
+  if (el) el.remove();
+}
+
+function riskLabel(factor) {
+  if (factor >= 12) return '<span class="chip alto">Alto</span>';
+  if (factor >= 7)  return '<span class="chip medio">Medio</span>';
+  return '<span class="chip bajo">Bajo</span>';
+}
+
+function fmt(n, dec=2) {
+  return n.toLocaleString('es-PE', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+
+function calculate() {
+  const rows = document.querySelectorAll('[id^="row-"]');
+  if (!rows.length) { alert('Agrega al menos un material.'); return; }
+
+  let items = [];
+  rows.forEach(row => {
+    const id = row.id.split('-')[1];
+    const matIdx = parseInt(document.getElementById(`mat-${id}`).value);
+    const qty = parseFloat(document.getElementById(`qty-${id}`).value) || 0;
+    const price = usePrices ? (parseFloat(document.getElementById(`price-${id}`).value) || 0) : 0;
+    const mat = MATERIALS[matIdx];
+    const factor = (mat.low + mat.high) / 2;
+    const extra = qty * (factor / 100);
+    const total = qty + extra;
+    items.push({ name: mat.name, unit: mat.unit, qty, factor, extra, total, price, wasteCost: extra * price });
+  });
+
+  // Summary
+  const totalWaste = items.reduce((s,i) => s + (i.factor), 0) / items.length;
+  const totalCost = items.reduce((s,i) => s + i.wasteCost, 0);
+
+  document.getElementById('summaryBoxes').innerHTML = `
+    <div class="stat-box ok">
+      <span class="val">${items.length}</span>
+      <span class="lbl">Materiales calculados</span>
+    </div>
+    <div class="stat-box warn">
+      <span class="val">${fmt(totalWaste,1)}%</span>
+      <span class="lbl">Desperdicio promedio</span>
+    </div>
+    ${usePrices && totalCost > 0 ? `
+    <div class="stat-box danger">
+      <span class="val">$${fmt(totalCost,0)}</span>
+      <span class="lbl">Costo total desperdicio</span>
+    </div>` : ''}
+  `;
+
+  // Table
+  document.getElementById('resultBody').innerHTML = items.map(i => `
+    <tr>
+      <td><strong>${i.name}</strong></td>
+      <td>${fmt(i.qty)} ${i.unit}</td>
+      <td>${fmt(i.factor,1)}%</td>
+      <td style="color:var(--green);font-weight:700;">${fmt(i.total)} ${i.unit}</td>
+      <td style="color:var(--yellow);">+${fmt(i.extra)} ${i.unit}</td>
+      <td>${riskLabel(i.factor)}</td>
+    </tr>
+  `).join('');
+
+  if (usePrices && totalCost > 0) {
+    document.getElementById('costSection').style.display = '';
+    document.getElementById('totalCostVal').textContent = `$ ${fmt(totalCost)}`;
+  } else {
+    document.getElementById('costSection').style.display = 'none';
+  }
+
+  document.getElementById('results').style.display = '';
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  window._calcData = items;
+}
+
+function exportCSV() {
+  if (!window._calcData) return;
+  const headers = ['Material','Unidad','Cantidad Base','Factor Desperdicio %','Desperdicio','Total a Pedir'];
+  const rows = window._calcData.map(i => [i.name, i.unit, i.qty, fmt(i.factor,1), fmt(i.extra), fmt(i.total)]);
+  const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'calculo-desperdicio-infratek.csv';
+  a.click();
+}
+
+// Start with 3 example rows
+addRow(0, 25);
+addRow(1, 500);
+addRow(6, 80);
+</script>
+</body>
+</html>
